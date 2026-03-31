@@ -22,8 +22,7 @@ Minimum variables to start the app locally:
 - `DATABASE_URL`
 - `JWT_SECRET`
 - `NEXT_PUBLIC_APP_URL=http://localhost:3000`
-- `SEED_ADMIN_EMAIL`
-- `SEED_ADMIN_PASSWORD`
+- `ADMIN_EMAIL`
 
 Optional for a nicer seeded admin:
 - `SEED_ADMIN_NAME`
@@ -68,15 +67,14 @@ Open `http://localhost:3000`.
 
 The seeded accounts are now driven by environment variables.
 
-Admin account:
-- email: `SEED_ADMIN_EMAIL`
-- password: `SEED_ADMIN_PASSWORD`
+Automatic admin account:
+- any new account registered with `ADMIN_EMAIL` becomes `ADMIN`
 
 Student account:
 - email: `SEED_STUDENT_EMAIL`
 - password: `SEED_STUDENT_PASSWORD`
 
-If you change these values in Vercel or in `.env.local`, then run `npm run db:seed` again and the seed will update those two users.
+If an account with `ADMIN_EMAIL` already exists as a student, change its role in the database or register again with a fresh database.
 
 ## Deployment
 
@@ -89,8 +87,7 @@ If you change these values in Vercel or in `.env.local`, then run `npm run db:se
 - `DATABASE_URL`
 - `JWT_SECRET`
 - `NEXT_PUBLIC_APP_URL`
-- `SEED_ADMIN_EMAIL`
-- `SEED_ADMIN_PASSWORD`
+- `ADMIN_EMAIL`
 5. Redeploy.
 
 This repo also runs `prisma db push` during `npm run build` when `DATABASE_URL` is present, so deployments do not start with missing Prisma tables.
@@ -102,8 +99,7 @@ This repo also runs `prisma db push` during `npm run build` when `DATABASE_URL` 
 - `DATABASE_URL`: PostgreSQL connection string.
 - `JWT_SECRET`: random secret used to sign auth tokens.
 - `NEXT_PUBLIC_APP_URL`: public URL of your app.
-- `SEED_ADMIN_EMAIL`: admin login email that will be created by `npm run db:seed`.
-- `SEED_ADMIN_PASSWORD`: admin password that will be created by `npm run db:seed`.
+- `ADMIN_EMAIL`: any account created with this email through register becomes `ADMIN`.
 
 ### Optional seeded profile values
 

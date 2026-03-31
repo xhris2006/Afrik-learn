@@ -23,9 +23,12 @@ export async function POST(request: NextRequest) {
     if (!parsed.success) return validationError(parsed.error)
 
     const { name, email, password, university, faculty, level } = parsed.data
+    const normalizedEmail = email.toLowerCase().trim()
+    const adminEmail = process.env.ADMIN_EMAIL?.toLowerCase().trim()
+    const role = adminEmail && normalizedEmail === adminEmail ? 'ADMIN' : 'STUDENT'
 
     // Check existing user
-    const existing = await prisma.user.findUnique({ where: { email: email.toLowerCase() } })
+    const existing = await prisma.user.findUnique({ where: { email: normalizedEmail } })
     if (existing) return error('An account with this email already exists', 409)
 
     // Hash password
@@ -35,12 +38,12 @@ export async function POST(request: NextRequest) {
     const user = await prisma.user.create({
       data: {
         name,
-        email: email.toLowerCase(),
+        email: normalizedEmail,
         password: hashed,
         university,
         faculty,
         level,
-        role: 'STUDENT',
+        role,
       },
     })
 
