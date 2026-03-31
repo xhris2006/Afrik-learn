@@ -3,6 +3,7 @@
 
 import { NextResponse } from 'next/server'
 import { ZodError } from 'zod'
+import { Prisma } from '@prisma/client'
 
 // ── Success response ──────────────────────────────────────────
 export function success<T>(data: T, status = 200) {
@@ -38,6 +39,38 @@ export function notFound(message = 'Not found') {
 // ── Server error ──────────────────────────────────────────────
 export function serverError(err?: unknown) {
   console.error('[Server Error]', err)
+
+  if (err instanceof Prisma.PrismaClientInitializationError) {
+    return error(
+      'Database connection failed. Check DATABASE_URL and restart the server.',
+      500
+    )
+  }
+
+  if (err instanceof Prisma.PrismaClientKnownRequestError) {
+    if (err.code === 'P2021') {
+      return error(
+        'Database tables are missing. Run npm run db:push, then npm run db:seed.',
+        500
+      )
+    }
+
+    if (err.code === 'P2002') {
+      return error('A record with this value already exists.', 409)
+    }
+  }
+
+  if (err instanceof Prisma.PrismaClientValidationError) {
+    return error('Database query failed. Check that your Prisma schema is up to date.', 500)
+  }
+
+  if (err instanceof Error && /environment variable.*DATABASE_URL/i.test(err.message)) {
+    return error(
+      'DATABASE_URL is missing. Add it to .env.local and restart the server.',
+      500
+    )
+  }
+
   return error('Internal server error', 500)
 }
 

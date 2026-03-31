@@ -42,6 +42,13 @@ cp .env.example .env.local
 # Edit .env.local with your values
 ```
 
+For local auth to work, set these first:
+- `DATABASE_URL`
+- `JWT_SECRET`
+- `NEXT_PUBLIC_APP_URL=http://localhost:3000`
+
+`FAPSHI_*`, `CLOUDINARY_*`, and `SMTP_*` are optional for login/register.
+
 ### 3. Database
 ```bash
 npm run db:generate
@@ -49,11 +56,20 @@ npm run db:push
 npm run db:seed
 ```
 
+If `login` or `register` returns `500`, it usually means:
+- `DATABASE_URL` is missing or incorrect
+- the schema was not pushed yet
+- the demo accounts were not seeded yet
+
+The Prisma scripts in this repo load both `.env` and `.env.local`.
+
 ### 4. Run
 ```bash
 npm run dev
 # Open http://localhost:3000
 ```
+
+During `npm run build`, the app will automatically run `prisma db push` first when `DATABASE_URL` is available. This helps prevent deploys where the app starts before the Prisma tables exist.
 
 **Demo accounts:**
 | Role | Email | Password |
