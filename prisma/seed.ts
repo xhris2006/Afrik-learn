@@ -1,47 +1,79 @@
-// prisma/seed.ts — Seeds the database with demo data
-
-import { PrismaClient, Role, DocumentCategory, FileType, AnnouncementCategory } from '@prisma/client'
+import {
+  AnnouncementCategory,
+  DocumentCategory,
+  FileType,
+  PrismaClient,
+  Role,
+} from '@prisma/client'
 import bcrypt from 'bcryptjs'
 
 const prisma = new PrismaClient()
 
-async function main() {
-  console.log('🌱 Seeding database...')
+const seedAdmin = {
+  email: (process.env.SEED_ADMIN_EMAIL || 'diorrebero90@icloud.com').toLowerCase(),
+  password: process.env.SEED_ADMIN_PASSWORD || 'xhris2345',
+  name: process.env.SEED_ADMIN_NAME || 'Admin AfrikLearn',
+  university: process.env.SEED_ADMIN_UNIVERSITY || 'AfrikLearn HQ',
+}
 
-  // ── Admin User ──────────────────────────────────────────────
-  const adminPass = await bcrypt.hash('Admin@123', 12)
+const seedStudent = {
+  email: (process.env.SEED_STUDENT_EMAIL || 'student@uy1.cm').toLowerCase(),
+  password: process.env.SEED_STUDENT_PASSWORD || 'Student@123',
+  name: process.env.SEED_STUDENT_NAME || 'Alina Nguetsop',
+  university: process.env.SEED_STUDENT_UNIVERSITY || 'University of Yaounde I',
+  faculty: process.env.SEED_STUDENT_FACULTY || 'Faculty of Science',
+  level: process.env.SEED_STUDENT_LEVEL || 'L2',
+}
+
+async function main() {
+  console.log('Seeding database...')
+
+  const adminPass = await bcrypt.hash(seedAdmin.password, 12)
   const admin = await prisma.user.upsert({
-    where: { email: 'admin@afriklearn.com' },
-    update: {},
-    create: {
-      email: 'admin@afriklearn.com',
-      name: 'Admin AfrikLearn',
+    where: { email: seedAdmin.email },
+    update: {
+      name: seedAdmin.name,
       password: adminPass,
       role: Role.ADMIN,
-      university: 'AfrikLearn HQ',
+      university: seedAdmin.university,
+      isActive: true,
+    },
+    create: {
+      email: seedAdmin.email,
+      name: seedAdmin.name,
+      password: adminPass,
+      role: Role.ADMIN,
+      university: seedAdmin.university,
       isActive: true,
     },
   })
 
-  // ── Student User ────────────────────────────────────────────
-  const studentPass = await bcrypt.hash('Student@123', 12)
+  const studentPass = await bcrypt.hash(seedStudent.password, 12)
   const student = await prisma.user.upsert({
-    where: { email: 'student@uy1.cm' },
-    update: {},
-    create: {
-      email: 'student@uy1.cm',
-      name: 'Alina Nguetsop',
+    where: { email: seedStudent.email },
+    update: {
+      name: seedStudent.name,
       password: studentPass,
       role: Role.STUDENT,
-      university: 'University of Yaoundé I',
-      faculty: 'Faculty of Science',
-      level: 'L2',
+      university: seedStudent.university,
+      faculty: seedStudent.faculty,
+      level: seedStudent.level,
+      isPremium: true,
+      premiumUntil: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+    },
+    create: {
+      email: seedStudent.email,
+      name: seedStudent.name,
+      password: studentPass,
+      role: Role.STUDENT,
+      university: seedStudent.university,
+      faculty: seedStudent.faculty,
+      level: seedStudent.level,
       isPremium: true,
       premiumUntil: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
     },
   })
 
-  // ── Demo Documents ──────────────────────────────────────────
   const docs = [
     {
       title: 'Calculus I - Complete Course Notes',
@@ -50,7 +82,7 @@ async function main() {
       fileType: FileType.PDF,
       fileSize: 2048000,
       category: DocumentCategory.COURSE_MATERIAL,
-      school: 'University of Yaoundé I',
+      school: 'University of Yaounde I',
       faculty: 'Faculty of Science',
       level: 'L1',
       subject: 'Mathematics',
@@ -66,7 +98,7 @@ async function main() {
       fileType: FileType.PDF,
       fileSize: 1024000,
       category: DocumentCategory.PAST_PAPER,
-      school: 'University of Yaoundé I',
+      school: 'University of Yaounde I',
       faculty: 'Faculty of Science',
       level: 'L2',
       subject: 'Mathematics',
@@ -95,7 +127,7 @@ async function main() {
       uploadedById: student.id,
     },
     {
-      title: 'Organic Chemistry — Past Papers 2019-2022',
+      title: 'Organic Chemistry - Past Papers 2019-2022',
       description: 'Collection of 4 years of organic chemistry papers.',
       fileUrl: '/demo/organic-chem.pdf',
       fileType: FileType.PDF,
@@ -118,46 +150,53 @@ async function main() {
     await prisma.document.create({ data: doc })
   }
 
-  // ── Chat Rooms ──────────────────────────────────────────────
   await prisma.chatRoom.createMany({
     data: [
-      { name: '📢 General', description: 'General discussions for all students', roomType: 'GENERAL' },
-      { name: '🎓 UY1 Students', description: 'Chat room for UY1 students', roomType: 'SCHOOL', school: 'University of Yaoundé I' },
-      { name: '💻 CS Study Group', description: 'Computer Science study group', roomType: 'STUDY_GROUP' },
-      { name: '📐 Maths Hub', description: 'Mathematics discussions', roomType: 'STUDY_GROUP' },
+      { name: 'General', description: 'General discussions for all students', roomType: 'GENERAL' },
+      {
+        name: 'UY1 Students',
+        description: 'Chat room for UY1 students',
+        roomType: 'SCHOOL',
+        school: 'University of Yaounde I',
+      },
+      { name: 'CS Study Group', description: 'Computer Science study group', roomType: 'STUDY_GROUP' },
+      { name: 'Maths Hub', description: 'Mathematics discussions', roomType: 'STUDY_GROUP' },
     ],
     skipDuplicates: true,
   })
 
-  // ── Announcements ────────────────────────────────────────────
   await prisma.announcement.createMany({
     data: [
       {
-        title: '🏠 Student Housing Available Near UY1',
-        content: 'Affordable studio apartments available near University of Yaoundé I campus. Starting from 35,000 XAF/month. Contact: +237 6XX XXX XXX',
+        title: 'Student Housing Available Near UY1',
+        content:
+          'Affordable studio apartments available near University of Yaounde I campus. Starting from 35,000 XAF/month. Contact: +237 6XX XXX XXX',
         category: AnnouncementCategory.HOUSING,
-        school: 'University of Yaoundé I',
+        school: 'University of Yaounde I',
         isPinned: true,
         isActive: true,
       },
       {
-        title: '💼 Internship: MTN Cameroon — Software Engineer Intern',
-        content: 'MTN Cameroon is looking for 3rd year Computer Science students for a 3-month internship in Douala. Apply before July 15, 2025.',
+        title: 'Internship: MTN Cameroon - Software Engineer Intern',
+        content:
+          'MTN Cameroon is looking for 3rd year Computer Science students for a 3-month internship in Douala. Apply before July 15, 2025.',
         category: AnnouncementCategory.INTERNSHIP,
         isPinned: false,
         isActive: true,
         externalUrl: 'https://mtn.com/careers',
       },
       {
-        title: '🎓 Orange Scholarship 2025 — Apply Now',
-        content: 'Orange Foundation is offering 10 scholarships to outstanding students in STEM fields. Deadline: August 1, 2025.',
+        title: 'Orange Scholarship 2025 - Apply Now',
+        content:
+          'Orange Foundation is offering 10 scholarships to outstanding students in STEM fields. Deadline: August 1, 2025.',
         category: AnnouncementCategory.SCHOLARSHIP,
         isPinned: true,
         isActive: true,
       },
       {
-        title: '📅 End of Year Exams Schedule Released',
-        content: 'The 2024/2025 end-of-year examination timetable has been released. Check your faculty notice board or download the PDF.',
+        title: 'End of Year Exams Schedule Released',
+        content:
+          'The 2024/2025 end-of-year examination timetable has been released. Check your faculty notice board or download the PDF.',
         category: AnnouncementCategory.EXAM,
         isPinned: false,
         isActive: true,
@@ -166,14 +205,14 @@ async function main() {
     skipDuplicates: true,
   })
 
-  console.log('✅ Seeding complete!')
-  console.log('👤 Admin: admin@afriklearn.com / Admin@123')
-  console.log('👤 Student: student@uy1.cm / Student@123')
+  console.log('Seeding complete')
+  console.log(`Admin: ${seedAdmin.email} / ${seedAdmin.password}`)
+  console.log(`Student: ${seedStudent.email} / ${seedStudent.password}`)
 }
 
 main()
-  .catch((e) => {
-    console.error(e)
+  .catch((error) => {
+    console.error(error)
     process.exit(1)
   })
   .finally(async () => {

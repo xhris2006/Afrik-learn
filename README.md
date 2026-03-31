@@ -1,35 +1,11 @@
-# AfrikLearn 🎓
+# AfrikLearn
 
-**The #1 student platform for African universities — starting with Cameroon.**
+Student platform for African universities with course materials, past papers, community chat, announcements, and premium access.
 
-Access course materials, past exam papers with solutions, connect with fellow students, and stay updated on housing & internship opportunities.
-
----
-
-## ✨ Features
-
-### For Students
-- 📚 **Library** — Browse course materials (PDF, DOC, PPTX)
-- 📝 **Past Papers** — Filter by university, level, subject, year
-- 💬 **Community** — Real-time chat rooms by school and study group
-- 📢 **Announcements** — Housing, internships, scholarships, events
-- ⭐ **Ratings & Comments** — Rate documents and leave comments
-
-### For Admins
-- ✅ Approve/Reject submitted documents
-- 👥 User management — activate/deactivate, grant Premium
-- 📢 Create and pin announcements
-
-### Monetization
-- 💎 **Premium via Fapshi** (MTN MoMo, Orange Money, Cards)
-  - Monthly: 2,500 XAF | Semester: 12,000 XAF | Annual: 20,000 XAF
-  - Unlocks premium documents, solutions & corrections
-
----
-
-## 🚀 Quick Start
+## Quick Start
 
 ### 1. Install
+
 ```bash
 git clone https://github.com/your-org/afriklearn.git
 cd afriklearn
@@ -37,115 +13,164 @@ npm install
 ```
 
 ### 2. Configure
+
 ```bash
 cp .env.example .env.local
-# Edit .env.local with your values
 ```
 
-For local auth to work, set these first:
+Minimum variables to start the app locally:
 - `DATABASE_URL`
 - `JWT_SECRET`
 - `NEXT_PUBLIC_APP_URL=http://localhost:3000`
+- `SEED_ADMIN_EMAIL`
+- `SEED_ADMIN_PASSWORD`
 
-`FAPSHI_*`, `CLOUDINARY_*`, and `SMTP_*` are optional for login/register.
+Optional for a nicer seeded admin:
+- `SEED_ADMIN_NAME`
+- `SEED_ADMIN_UNIVERSITY`
 
-### 3. Database
+Optional for a seeded demo student:
+- `SEED_STUDENT_EMAIL`
+- `SEED_STUDENT_PASSWORD`
+- `SEED_STUDENT_NAME`
+- `SEED_STUDENT_UNIVERSITY`
+- `SEED_STUDENT_FACULTY`
+- `SEED_STUDENT_LEVEL`
+
+Optional until you use payments, uploads, or email:
+- `FAPSHI_*`
+- `CLOUDINARY_*`
+- `SMTP_*`
+- `EMAIL_FROM`
+
+### 3. Prepare the database
+
 ```bash
 npm run db:generate
 npm run db:push
 npm run db:seed
 ```
 
-If `login` or `register` returns `500`, it usually means:
+If `login` or `register` returns `500`, the most common reasons are:
 - `DATABASE_URL` is missing or incorrect
-- the schema was not pushed yet
-- the demo accounts were not seeded yet
-
-The Prisma scripts in this repo load both `.env` and `.env.local`.
+- the Prisma schema has not been pushed yet
+- the seeded accounts were not created yet
 
 ### 4. Run
+
 ```bash
 npm run dev
-# Open http://localhost:3000
 ```
 
-During `npm run build`, the app will automatically run `prisma db push` first when `DATABASE_URL` is available. This helps prevent deploys where the app starts before the Prisma tables exist.
+Open `http://localhost:3000`.
 
-**Demo accounts:**
-| Role | Email | Password |
-|------|-------|----------|
-| Admin | admin@afriklearn.com | Admin@123 |
-| Student | student@uy1.cm | Student@123 |
+## Seeded Accounts
 
----
+The seeded accounts are now driven by environment variables.
 
-## ☁️ Deployment
+Admin account:
+- email: `SEED_ADMIN_EMAIL`
+- password: `SEED_ADMIN_PASSWORD`
 
-### Railway (Database) + Vercel (App)
+Student account:
+- email: `SEED_STUDENT_EMAIL`
+- password: `SEED_STUDENT_PASSWORD`
 
-**1. Database on Railway:**
-- New Project → PostgreSQL → copy DATABASE_URL
-- Run: `DATABASE_URL=<url> npm run db:push && npm run db:seed`
+If you change these values in Vercel or in `.env.local`, then run `npm run db:seed` again and the seed will update those two users.
 
-**2. App on Vercel:**
+## Deployment
+
+### Railway + Vercel
+
+1. Create PostgreSQL on Railway.
+2. Copy the Railway `DATABASE_URL`.
+3. In Vercel, open `Project Settings > Environment Variables`.
+4. Add at least:
+- `DATABASE_URL`
+- `JWT_SECRET`
+- `NEXT_PUBLIC_APP_URL`
+- `SEED_ADMIN_EMAIL`
+- `SEED_ADMIN_PASSWORD`
+5. Redeploy.
+
+This repo also runs `prisma db push` during `npm run build` when `DATABASE_URL` is present, so deployments do not start with missing Prisma tables.
+
+## Environment Variables
+
+### Required for auth and basic app startup
+
+- `DATABASE_URL`: PostgreSQL connection string.
+- `JWT_SECRET`: random secret used to sign auth tokens.
+- `NEXT_PUBLIC_APP_URL`: public URL of your app.
+- `SEED_ADMIN_EMAIL`: admin login email that will be created by `npm run db:seed`.
+- `SEED_ADMIN_PASSWORD`: admin password that will be created by `npm run db:seed`.
+
+### Optional seeded profile values
+
+- `SEED_ADMIN_NAME`: admin display name.
+- `SEED_ADMIN_UNIVERSITY`: admin university label.
+- `SEED_STUDENT_EMAIL`
+- `SEED_STUDENT_PASSWORD`
+- `SEED_STUDENT_NAME`
+- `SEED_STUDENT_UNIVERSITY`
+- `SEED_STUDENT_FACULTY`
+- `SEED_STUDENT_LEVEL`
+
+### Payments
+
+- `FAPSHI_API_USER`
+- `FAPSHI_API_KEY`
+- `FAPSHI_WEBHOOK_SECRET`
+- `NEXT_PUBLIC_FAPSHI_BASE_URL`
+
+Where to find them:
+- create a Fapshi account
+- open `https://fapshi.com/developer`
+- copy the API user, API key, and webhook secret from your dashboard
+
+### File uploads
+
+- `CLOUDINARY_CLOUD_NAME`
+- `CLOUDINARY_API_KEY`
+- `CLOUDINARY_API_SECRET`
+- `NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME`
+
+Where to find them:
+- create a Cloudinary account
+- open the Cloudinary dashboard
+- copy the cloud name, API key, and API secret from the environment credentials section
+
+### Email
+
+- `SMTP_HOST`
+- `SMTP_PORT`
+- `SMTP_USER`
+- `SMTP_PASS`
+- `EMAIL_FROM`
+
+Where to find them:
+- use your email provider's SMTP settings
+- examples: Gmail, Brevo, Mailgun, Zoho, Resend SMTP
+- for Gmail, you usually need an app password instead of your normal password
+
+## Database Scripts
+
 ```bash
-npm i -g vercel
-vercel --prod
-```
-Add all env vars in Vercel dashboard.
-
-**3. Fapshi Webhook:**
-Set webhook URL in Fapshi dashboard to:
-`https://your-domain.vercel.app/api/payments/webhook`
-
----
-
-## 🔧 Environment Variables
-
-| Variable | Required | Description |
-|----------|----------|-------------|
-| `DATABASE_URL` | ✅ | PostgreSQL connection |
-| `JWT_SECRET` | ✅ | JWT signing secret |
-| `NEXT_PUBLIC_APP_URL` | ✅ | App URL |
-| `FAPSHI_API_USER` | ✅ | Fapshi API user |
-| `FAPSHI_API_KEY` | ✅ | Fapshi API key |
-| `FAPSHI_WEBHOOK_SECRET` | ✅ | Webhook verification |
-| `CLOUDINARY_CLOUD_NAME` | ⚠️ | File storage (prod) |
-| `CLOUDINARY_API_KEY` | ⚠️ | Cloudinary key |
-| `CLOUDINARY_API_SECRET` | ⚠️ | Cloudinary secret |
-
----
-
-## 🗄 Database Scripts
-```bash
-npm run db:generate    # Generate Prisma client
-npm run db:push        # Push schema to DB
-npm run db:migrate     # Create migration
-npm run db:studio      # Open Prisma Studio GUI
-npm run db:seed        # Seed demo data
+npm run db:generate
+npm run db:push
+npm run db:migrate
+npm run db:studio
+npm run db:seed
 ```
 
----
+## Stack
 
-## 🏗 Tech Stack
-- **Framework:** Next.js 14 (App Router) + TypeScript
-- **Styling:** Tailwind CSS
-- **Database:** PostgreSQL + Prisma
-- **Auth:** JWT (jose) + HTTP-only cookies
-- **State:** Zustand
-- **Payments:** Fapshi (MTN MoMo, Orange Money)
-- **Storage:** Cloudinary (configurable)
-- **Deploy:** Vercel + Railway
-
----
-
-## 💳 Fapshi Payment Flow
-1. Student clicks Subscribe → `POST /api/payments/initiate`
-2. Redirect to Fapshi secure payment page
-3. Fapshi sends webhook → `POST /api/payments/webhook`
-4. Redirect to `/dashboard/premium/success?transId=xxx`
-5. `GET /api/payments/verify` confirms and activates Premium
-
----
-
-*Built with ❤️ for African students.*
+- Next.js 14
+- TypeScript
+- Prisma
+- PostgreSQL
+- Tailwind CSS
+- Zustand
+- JWT auth with HTTP-only cookies
+- Fapshi
+- Cloudinary
