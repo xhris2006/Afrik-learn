@@ -1,0 +1,269 @@
+// ============================================================
+// AfrikLearn — Prisma Schema
+// PostgreSQL database for African university student platform
+// ============================================================
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ─── Users ───────────────────────────────────────────────────
+model User {
+  id           String    @id @default(cuid())
+  email        String    @unique
+  name         String
+  password     String
+  role         Role      @default(STUDENT)
+  avatar       String?
+  university   String?
+  faculty      String?
+  level        String?
+  bio          String?
+  isPremium    Boolean   @default(false)
+  premiumUntil DateTime?
+  isActive     Boolean   @default(true)
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  documents     Document[]
+  ratings       Rating[]
+  comments      Comment[]
+  messages      Message[]
+  payments      Payment[]
+  members       ChatRoomMember[]
+  notifications Notification[]
+
+  @@map("users")
+}
+
+enum Role {
+  ADMIN
+  MODERATOR
+  STUDENT
+}
+
+// ─── Documents ───────────────────────────────────────────────
+model Document {
+  id            String           @id @default(cuid())
+  title         String
+  description   String?
+  fileUrl       String
+  fileType      FileType
+  fileSize      Int
+  thumbnailUrl  String?
+  category      DocumentCategory
+  isPremium     Boolean          @default(false)
+  isApproved    Boolean          @default(false)
+  downloadCount Int              @default(0)
+  viewCount     Int              @default(0)
+  school        String
+  faculty       String?
+  level         String
+  subject       String
+  year          Int?
+  hasSolution   Boolean          @default(false)
+  solutionUrl   String?
+  tags          String[]
+  createdAt     DateTime         @default(now())
+  updatedAt     DateTime         @updatedAt
+
+  uploadedBy   User     @relation(fields: [uploadedById], references: [id])
+  uploadedById String
+  ratings      Rating[]
+  comments     Comment[]
+
+  @@map("documents")
+}
+
+enum FileType {
+  PDF
+  DOC
+  DOCX
+  PPT
+  PPTX
+  IMAGE
+  OTHER
+}
+
+enum DocumentCategory {
+  COURSE_MATERIAL
+  PAST_PAPER
+  SOLUTION
+  NOTES
+  THESIS
+  PROJECT
+  TUTORIAL
+}
+
+// ─── Ratings ─────────────────────────────────────────────────
+model Rating {
+  id         String   @id @default(cuid())
+  score      Int
+  createdAt  DateTime @default(now())
+
+  document   Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  documentId String
+  user       User     @relation(fields: [userId], references: [id])
+  userId     String
+
+  @@unique([documentId, userId])
+  @@map("ratings")
+}
+
+// ─── Comments ────────────────────────────────────────────────
+model Comment {
+  id         String    @id @default(cuid())
+  content    String
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+
+  document   Document  @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  documentId String
+  user       User      @relation(fields: [userId], references: [id])
+  userId     String
+  parentId   String?
+  parent     Comment?  @relation("Replies", fields: [parentId], references: [id])
+  replies    Comment[] @relation("Replies")
+
+  @@map("comments")
+}
+
+// ─── Chat ────────────────────────────────────────────────────
+model ChatRoom {
+  id          String           @id @default(cuid())
+  name        String
+  description String?
+  roomType    RoomType         @default(GENERAL)
+  school      String?
+  faculty     String?
+  isPublic    Boolean          @default(true)
+  createdAt   DateTime         @default(now())
+
+  members  ChatRoomMember[]
+  messages Message[]
+
+  @@map("chat_rooms")
+}
+
+enum RoomType {
+  GENERAL
+  SCHOOL
+  FACULTY
+  STUDY_GROUP
+}
+
+model ChatRoomMember {
+  id       String   @id @default(cuid())
+  joinedAt DateTime @default(now())
+
+  room   ChatRoom @relation(fields: [roomId], references: [id])
+  roomId String
+  user   User     @relation(fields: [userId], references: [id])
+  userId String
+
+  @@unique([roomId, userId])
+  @@map("chat_room_members")
+}
+
+model Message {
+  id        String   @id @default(cuid())
+  content   String
+  fileUrl   String?
+  createdAt DateTime @default(now())
+
+  room     ChatRoom @relation(fields: [roomId], references: [id])
+  roomId   String
+  sender   User     @relation(fields: [senderId], references: [id])
+  senderId String
+
+  @@map("messages")
+}
+
+// ─── Announcements ───────────────────────────────────────────
+model Announcement {
+  id          String               @id @default(cuid())
+  title       String
+  content     String
+  category    AnnouncementCategory
+  school      String?
+  imageUrl    String?
+  externalUrl String?
+  isPinned    Boolean              @default(false)
+  isActive    Boolean              @default(true)
+  expiresAt   DateTime?
+  createdAt   DateTime             @default(now())
+  updatedAt   DateTime             @updatedAt
+
+  @@map("announcements")
+}
+
+enum AnnouncementCategory {
+  HOUSING
+  INTERNSHIP
+  JOB
+  SCHOLARSHIP
+  EVENT
+  GENERAL
+  EXAM
+}
+
+// ─── Payments ────────────────────────────────────────────────
+model Payment {
+  id            String        @id @default(cuid())
+  transactionId String        @unique
+  amount        Float
+  currency      String        @default("XAF")
+  status        PaymentStatus @default(PENDING)
+  plan          PremiumPlan
+  metadata      Json?
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  user   User   @relation(fields: [userId], references: [id])
+  userId String
+
+  @@map("payments")
+}
+
+enum PaymentStatus {
+  PENDING
+  SUCCESSFUL
+  FAILED
+  CANCELLED
+}
+
+enum PremiumPlan {
+  MONTHLY
+  SEMESTER
+  ANNUAL
+}
+
+// ─── Notifications ───────────────────────────────────────────
+model Notification {
+  id        String           @id @default(cuid())
+  title     String
+  message   String
+  type      NotificationType
+  isRead    Boolean          @default(false)
+  link      String?
+  createdAt DateTime         @default(now())
+
+  user   User   @relation(fields: [userId], references: [id])
+  userId String
+
+  @@map("notifications")
+}
+
+enum NotificationType {
+  DOCUMENT_APPROVED
+  DOCUMENT_REJECTED
+  NEW_COMMENT
+  NEW_ANNOUNCEMENT
+  PAYMENT_SUCCESS
+  SYSTEM
+}
