@@ -62,7 +62,7 @@ export interface Document {
   tags: string[]
   createdAt: Date
   updatedAt: Date
-  uploadedBy: Pick<AuthUser, 'id' | 'name' | 'avatar'>
+  uploadedBy: Pick<AuthUser, 'id' | 'name' | 'avatar' | 'university'>
   ratings: { score: number }[]
   _count?: { comments: number; ratings: number }
   avgRating?: number
