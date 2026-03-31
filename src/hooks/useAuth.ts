@@ -1,5 +1,3 @@
-// src/hooks/useAuth.ts
-// Authentication hook — wraps Zustand store with API calls
 'use client'
 
 import { useCallback } from 'react'
@@ -8,11 +6,14 @@ import toast from 'react-hot-toast'
 import { useAuthStore } from '@/store/auth'
 import type { LoginCredentials, RegisterData, AuthUser } from '@/types'
 
+function getPostAuthRoute(role?: string) {
+  return role === 'ADMIN' || role === 'MODERATOR' ? '/admin' : '/dashboard'
+}
+
 export function useAuth() {
   const { user, isLoading, setUser, setLoading, logout: clearUser, updateUser } = useAuthStore()
   const router = useRouter()
 
-  // ── Login ───────────────────────────────────────────────────
   const login = useCallback(
     async (credentials: LoginCredentials) => {
       setLoading(true)
@@ -27,9 +28,10 @@ export function useAuth() {
           toast.error(data.error || 'Login failed')
           return false
         }
+
         setUser(data.data.user)
-        toast.success(`Welcome back, ${data.data.user.name.split(' ')[0]}! 👋`)
-        router.push('/dashboard')
+        toast.success(`Welcome back, ${data.data.user.name.split(' ')[0]}!`)
+        router.push(getPostAuthRoute(data.data.user.role))
         return true
       } catch {
         toast.error('Network error. Please try again.')
@@ -41,7 +43,6 @@ export function useAuth() {
     [router, setUser, setLoading]
   )
 
-  // ── Register ────────────────────────────────────────────────
   const register = useCallback(
     async (formData: RegisterData) => {
       setLoading(true)
@@ -56,9 +57,10 @@ export function useAuth() {
           toast.error(result.error || 'Registration failed')
           return false
         }
+
         setUser(result.data.user)
-        toast.success('Account created! Welcome to AfrikLearn 🎉')
-        router.push('/dashboard')
+        toast.success('Account created! Welcome to AfrikLearn')
+        router.push(getPostAuthRoute(result.data.user.role))
         return true
       } catch {
         toast.error('Network error. Please try again.')
@@ -70,19 +72,18 @@ export function useAuth() {
     [router, setUser, setLoading]
   )
 
-  // ── Logout ───────────────────────────────────────────────────
   const logout = useCallback(async () => {
     try {
       await fetch('/api/auth/logout', { method: 'POST' })
     } catch {
       // ignore network errors on logout
     }
+
     clearUser()
     router.push('/login')
     toast.success('Logged out successfully')
   }, [router, clearUser])
 
-  // ── Refresh user from server ──────────────────────────────────
   const refreshUser = useCallback(async () => {
     try {
       const res = await fetch('/api/auth/me')

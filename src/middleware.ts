@@ -1,19 +1,19 @@
-// src/middleware.ts
-// Next.js edge middleware — redirects unauthenticated users
-
 import { NextRequest, NextResponse } from 'next/server'
 import { verifyToken } from '@/lib/auth'
 
-// Protected route prefixes
 const PROTECTED = ['/dashboard', '/library', '/past-papers', '/community', '/announcements', '/premium', '/profile', '/admin']
 const AUTH_ROUTES = ['/login', '/register', '/forgot-password']
+
+function getPostAuthRoute(role?: string) {
+  return role === 'ADMIN' || role === 'MODERATOR' ? '/admin' : '/dashboard'
+}
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
   const token = request.cookies.get('afriklearn_token')?.value
 
-  const isProtected = PROTECTED.some((p) => pathname.startsWith(p))
-  const isAuthRoute = AUTH_ROUTES.some((p) => pathname.startsWith(p))
+  const isProtected = PROTECTED.some((prefix) => pathname.startsWith(prefix))
+  const isAuthRoute = AUTH_ROUTES.some((prefix) => pathname.startsWith(prefix))
 
   if (isProtected) {
     if (!token) {
@@ -24,22 +24,20 @@ export async function middleware(request: NextRequest) {
 
     const payload = await verifyToken(token)
     if (!payload) {
-      const res = NextResponse.redirect(new URL('/login', request.url))
-      res.cookies.delete('afriklearn_token')
-      return res
+      const response = NextResponse.redirect(new URL('/login', request.url))
+      response.cookies.delete('afriklearn_token')
+      return response
     }
 
-    // Admin-only routes
     if (pathname.startsWith('/admin') && payload.role !== 'ADMIN' && payload.role !== 'MODERATOR') {
       return NextResponse.redirect(new URL('/dashboard', request.url))
     }
   }
 
-  // Redirect authenticated users away from auth pages
   if (isAuthRoute && token) {
     const payload = await verifyToken(token)
     if (payload) {
-      return NextResponse.redirect(new URL('/dashboard', request.url))
+      return NextResponse.redirect(new URL(getPostAuthRoute(payload.role), request.url))
     }
   }
 

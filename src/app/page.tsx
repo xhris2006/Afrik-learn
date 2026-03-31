@@ -1,9 +1,16 @@
-// src/app/page.tsx
 import { redirect } from 'next/navigation'
 import { getCurrentUser } from '@/lib/auth'
 
 export default async function HomePage() {
   const user = await getCurrentUser()
-  if (user) redirect('/dashboard')
-  else redirect('/login')
+
+  if (!user) {
+    redirect('/login')
+  }
+
+  if (user.role === 'ADMIN' || user.role === 'MODERATOR') {
+    redirect('/admin')
+  }
+
+  redirect('/dashboard')
 }
